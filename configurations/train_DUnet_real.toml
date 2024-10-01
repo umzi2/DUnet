@@ -1,0 +1,71 @@
+name = "train_dunet_real"
+model_type = "image"
+scale = 4
+manual_seed = 1024
+
+[datasets.train]
+type = "paired"
+dataroot_gt = '/run/media/umzi/H/dat/df2k/DF2K/DF2K/HR_qoi/'
+dataroot_lq = '/run/media/umzi/H/dat/df2k/DF2K/DF2K/LR_bicubic/4x_qoi/'
+patch_size = 48
+batch_size = 8
+
+[datasets.val]
+name = "val"
+type = "paired"
+dataroot_gt = '/run/media/umzi/H/dat/df2k/benchmark/Urban100/HR/'
+dataroot_lq = '/run/media/umzi/H/dat/df2k/benchmark/Urban100/LR_bicubic/X4/'
+
+[val]
+val_freq = 5000
+
+[val.metrics.psnr]
+type = "calculate_psnr"
+[val.metrics.ssim]
+type = "calculate_ssim"
+[val.metrics.dists]
+type = "calculate_dists"
+better = "lower"
+
+[path]
+pretrain_network_g = '/run/media/umzi/H/dat/df2k/spanx4_ch48.pth'
+
+[network_g]
+type = "span"
+norm = true
+[network_d]
+type = "DUnet"
+
+[train]
+ema = 0.999
+
+[train.optim_g]
+type = "adan"
+lr = 2e-4
+[train.optim_d]
+type = "adan"
+lr = 1e-4
+
+
+#  losses
+[train.pixel_opt]
+type = "L1Loss"
+loss_weight = 1.0
+
+[train.perceptual_opt] #EA2FPN without at least minimal loss of perception gives me NAN, so tests were carried out with it
+type = "vgg_perceptual_loss"
+loss_weight = 0.05
+criterion = "huber"
+
+[train.gan_opt]
+type = "gan_loss"
+gan_type = "bce"
+loss_weight = 0.1
+
+
+[logger]
+total_iter = 100000
+save_checkpoint_freq = 5000
+use_tb_logger = true
+#save_tb_img = true
+#print_freq = 100
